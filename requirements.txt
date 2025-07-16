@@ -6,3 +6,4 @@ scipy
 forcealign
 pydub==0.24.1
 torch==2.7.1
+torchaudio==2.7.1
