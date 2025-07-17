@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route("/align", methods=["POST"])
 def align_audio():
-    # Get the uploaded file
+    # Get the uploaded file and transcript
     if "audio" not in request.files or "transcript" not in request.form:
         return jsonify({"error": "Missing audio or transcript"}), 400
 
@@ -39,10 +39,10 @@ def align_audio():
         return jsonify({"error": str(e)}), 500
 
     finally:
-        # Clean up the temp file
         if os.path.exists(audio_path):
             os.remove(audio_path)
 
-# For local testing
+# ✅ Run with dynamic Render port
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000, debug=True)
+    port = int(os.environ.get("PORT", 10000))  # Get port from Render
+    app.run(host="0.0.0.0", port=port, debug=True)
