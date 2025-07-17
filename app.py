@@ -2,6 +2,11 @@ from flask import Flask, request, jsonify
 from forcealign import ForceAlign
 import os
 
+import nltk
+nltk.data.path.append("/opt/render/nltk_data")
+
+
+
 app = Flask(__name__)
 
 @app.route("/align", methods=["POST"])
