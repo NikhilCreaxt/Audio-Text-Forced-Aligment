@@ -1,5 +1,4 @@
-fastapi
-uvicorn
+flask
 python-multipart
 numpy
 scipy
@@ -8,3 +7,4 @@ torchaudio==2.7.1
 forcealign==1.1.9
 pydub==0.25.1
 g2p_en==2.1.0
+requests
