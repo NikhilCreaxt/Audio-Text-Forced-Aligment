@@ -1,49 +1,48 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
+from flask import Flask, request, jsonify
 from forcealign import ForceAlign
 import os
-import uvicorn
 
-app = FastAPI()
+app = Flask(__name__)
 
+@app.route("/align", methods=["POST"])
+def align_audio():
+    # Get the uploaded file
+    if "audio" not in request.files or "transcript" not in request.form:
+        return jsonify({"error": "Missing audio or transcript"}), 400
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # Use PORT from environment or default to 8000
-    uvicorn.run("app:app", host="0.0.0.0", port=port)
+    audio_file = request.files["audio"]
+    transcript = request.form["transcript"]
 
-# Enable CORS for all origins
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.post("/align")
-async def align_audio(
-    audio: UploadFile = File(...),
-    transcript: str = Form(...)
-):
-    # Save uploaded audio
+    # Save audio to a temp file
     audio_path = "temp.wav"
-    with open(audio_path, "wb") as f:
-        f.write(await audio.read())
+    audio_file.save(audio_path)
 
-    # Run alignment
-    aligner = ForceAlign(audio_file=audio_path, transcript=transcript)
-    words = aligner.inference()
+    try:
+        # Run alignment
+        aligner = ForceAlign(audio_file=audio_path, transcript=transcript)
+        words = aligner.inference()
 
-    # Clean up temp audio
-    os.remove(audio_path)
+        # Format output
+        result = {
+            "alignment": [
+                {
+                    "word": w.word,
+                    "start": round(w.time_start, 3),
+                    "end": round(w.time_end, 3)
+                }
+                for w in words
+            ]
+        }
+        return jsonify(result)
 
-    # Format response
-    return {
-        "alignment": [
-            {
-                "word": w.word,
-                "start": round(w.time_start, 3),
-                "end": round(w.time_end, 3)
-            }
-            for w in words
-        ]
-    }
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        # Clean up the temp file
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+
+# For local testing
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=True)
